@@ -1,73 +1,153 @@
 # KaleidoPipelines
 
-A Spring Boot application for feature engineering and data processing pipelines.
+A modular and extensible pipeline processing system designed to handle different types of data processing pipelines with partner-specific implementations.
 
-## Overview
-KaleidoPipelines is a robust data processing application that handles feature engineering for different partners using a flexible and extensible architecture.
+## Project Structure
 
-## Features
-- Asynchronous data processing
-- Partner-specific feature engineering
-- RESTful API endpoints
-- H2 in-memory database
-- Actuator endpoints for monitoring
-- Configurable thread pool for parallel processing
+```
+kaleidoPipelines/
+├── src/main/java/com/bytecoder/kaleidopipelines/
+│   ├── controller/
+│   │   ├── PipelineController.java       # REST endpoints
+│   │   ├── HealthController.java         # Health check endpoint
+│   │   ├── Pipeline.java                 # Pipeline interface
+│   │   └── KaleidoPipelineFactory.java   # Factory for creating pipelines
+│   ├── kiscorepipeline/
+│   │   ├── pipeline/
+│   │   │   └── KiscorePipeline.java      # Kiscore pipeline implementation
+│   │   └── featurecreation/
+│   │       ├── FeatureCreation.java      # Base feature creation
+│   │       └── partners/
+│   │           ├── sonata/               # Sonata-specific features
+│   │           └── veritas/              # Veritas-specific features
+│   └── kiviewpipeline/
+│       ├── KiViewPipeline.java           # KiView pipeline implementation
+│       ├── base/
+│       │   ├── DefaultIngestionPipeline.java
+│       │   └── DefaultRiskPipeline.java
+│       └── partners/
+│           ├── sonata/                   # Sonata-specific pipelines
+│           └── veritas/                  # Veritas-specific pipelines
+```
+
+## Design Patterns
+
+1. **Factory Pattern**
+   - `KaleidoPipelineFactory`: Creates appropriate pipeline instances based on type
+   - `FeatureFactory`: Creates partner-specific features
+   - Enables easy addition of new pipeline types and features
+
+2. **Strategy Pattern**
+   - Different pipeline implementations (KiView, Kiscore)
+   - Partner-specific implementations for each pipeline type
+   - Allows switching between different algorithms/implementations
+
+3. **Template Method Pattern**
+   - Base pipeline classes define the skeleton
+   - Partner-specific classes override specific methods
+   - Ensures consistent pipeline execution flow
+
+4. **Command Pattern**
+   - Pipeline execution commands encapsulate all necessary information
+   - Enables queuing and execution of pipeline operations
+
+## Request Flow
+
+1. **API Entry Point**
+   ```
+   POST /pipeline/execute
+   Body: ["PIPELINE_TYPE", "PARTNER", "OPERATION", "LOAD_TYPE"]
+   ```
+
+2. **Request Processing**
+   ```
+   Client Request
+        ↓
+   PipelineController
+        ↓
+   KaleidoPipelineFactory
+        ↓
+   Specific Pipeline (KiView/Kiscore)
+        ↓
+   Partner-Specific Implementation
+   ```
+
+3. **Example Flows**:
+
+   a. KiView Pipeline:
+   ```
+   ["KIVIEW", "SONATA", "INGESTION", "ONETIME_LOAD"]
+   → KiViewPipeline
+   → SonataIngestionPipeline.executeOneTimeLoad()
+   ```
+
+   b. Kiscore Pipeline:
+   ```
+   ["KISCORE", "VERITAS", "MFI"]
+   → KiscorePipeline
+   → VeritasMFIFeatures.create()
+   ```
+
+## Pipeline Types
+
+1. **KiView Pipeline**
+   - **Operations**: INGESTION, RISK
+   - **Load Types**: ONETIME_LOAD, INCREMENTAL_LOAD
+   - Handles data ingestion and risk assessment
+
+2. **Kiscore Pipeline**
+   - **Features**: MFI, SME, CONSUMER
+   - Handles feature creation and scoring
+
+## Partner Implementation
+
+1. **Sonata**
+   - Custom ingestion logic
+   - Partner-specific risk calculations
+   - Specialized feature creation
+
+2. **Veritas**
+   - Custom data transformation
+   - Partner-specific risk models
+   - Specialized scoring algorithms
+
+## Adding New Partners
+
+1. Create partner-specific package under respective pipeline
+2. Implement required pipeline classes extending base classes
+3. Override necessary methods with partner-specific logic
+
+## Adding New Pipeline Types
+
+1. Create new pipeline package
+2. Implement Pipeline interface
+3. Add to KaleidoPipelineFactory
+4. Create necessary base and partner-specific implementations
+
+## Usage Examples
+
+```bash
+# Sonata KiView Ingestion - One-time Load
+curl -X POST "http://localhost:8080/pipeline/execute" \
+     -H "Content-Type: application/json" \
+     -d '["KIVIEW", "SONATA", "INGESTION", "ONETIME_LOAD"]'
+
+# Veritas Kiscore Feature Creation
+curl -X POST "http://localhost:8080/pipeline/execute" \
+     -H "Content-Type: application/json" \
+     -d '["KISCORE", "VERITAS", "MFI"]'
+```
+
+## Dependencies
+
+- Java 21
+- Spring Boot 3.2.1
+- Maven for build management
+- SLF4J for logging
 
 ## Getting Started
 
-### Prerequisites
-- Java 11 or higher
-- Maven 3.6 or higher
-
-### Building the Application
-```bash
-mvn clean install
-```
-
-### Running the Application
-```bash
-mvn spring-boot:run
-```
-
-The application will start on port 8080 with context path `/api`.
-
-### Accessing the H2 Console
-- URL: http://localhost:8080/api/h2-console
-- JDBC URL: jdbc:h2:mem:kaleidodb
-- Username: sa
-- Password: password
-
-### Health Check
-- http://localhost:8080/api/actuator/health
-
-## Project Structure
-```
-kaleidoPipelines/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/
-│   │   │       └── bytecoder/
-│   │   │           └── kaleidopipelines/
-│   │   │               ├── config/
-│   │   │               ├── controller/
-│   │   │               ├── model/
-│   │   │               ├── repository/
-│   │   │               ├── service/
-│   │   │               └── KaleidoPipelinesApplication.java
-│   │   └── resources/
-│   │       └── application.yml
-│   └── test/
-└── pom.xml
-```
-
-## Configuration
-The application can be configured through `application.yml`. Key configurations include:
-- Database settings
-- Server port and context path
-- Logging levels
-- Actuator endpoints
-- Thread pool settings
-
-## API Documentation
-API documentation will be available through Swagger UI at: http://localhost:8080/api/swagger-ui.html
+1. Clone the repository
+2. Build using Maven: `mvn clean install`
+3. Run the application: `mvn spring-boot:run`
+4. Access the API at `http://localhost:8080`

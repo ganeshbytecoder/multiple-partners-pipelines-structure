@@ -1,8 +1,7 @@
 package com.bytecoder.kaleidopipelines.controller;
 
-import com.bytecoder.kaleidopipelines.kiscore.pipeline.KiscorePipeline;
-import com.bytecoder.kaleidopipelines.kiview.pipeline.KiViewPipeline;
-import org.springframework.stereotype.Component;
+import com.bytecoder.kaleidopipelines.kiscorepipeline.pipeline.KiscorePipeline;
+import com.bytecoder.kaleidopipelines.kiviewpipeline.KiViewPipeline;
 
 public class KaleidoPipelineFactory  {
     public static Pipeline createPipeline(String pipelineType) {

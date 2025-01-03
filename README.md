@@ -1,0 +1,1 @@
+# multiple-partners-pipelines-structure
